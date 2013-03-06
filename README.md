@@ -28,6 +28,7 @@ Testing:
 
     $ BITLY_ACCESS_TOKEN=<bitlytoken> BITLY_HISTORICS_CONFIG=testing nosetests
 or 
+
     $ BITLY_ACCESS_TOKEN=<bitlytoken> BITLY_HISTORICS_CONFIG=testing python -m unittest discover
 
 You should see 8 tests pass.
@@ -49,21 +50,27 @@ To featch new links for the domains we're tracking, and all the click history fo
     $ BITLY_HISTORICS_CONFIG=production python historics.py -e
 
 To add a domain, we ask Bitly for all the Bitly links for asos.com:
+
     $ BITLY_HISTORICS_CONFIG=production python historics.py --a asos.com
+
 and our mongodb is updated with the snapshot of links that they provide.
 
 We can run this same call on another day to get an updated set of links, we'll add new links to our collection. We never remove links from mongodb.
 
 Next let us request updated click data for every Bitly link that we track. We won't request an update if we've already recorded new data in the last 24 hours.
+
     $ BITLY_HISTORICS_CONFIG=production python historics.py --update-clicks
 
 To draw graphs of all click data for specific hashes:
+
     $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py -g XR1aPQ VWUGMX
 
 To draw graphs per website:
+
     $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py --d bbc.co.uk
 
 To extract a CSV file of clicks per brand (we can also do clicks per day):
+
     $ python extract_data.py --ff 2013-02-10T00:00 -d asos.com topman.com topshop.com hm.com urbanoutfitters.com topman.com zara.com urbanoutfitters.co.uk nordstrom.com gap.com americanapparel.net
 
 Todo:
@@ -78,11 +85,6 @@ What might go wrong:
 -------------------
 
  * We use bitly's clicks_by_day API call, this is due to be deprecated. Their replacement call gave an aggregate result, not a breakdown by day, so further investigation will be required here.
- * We don't test for timeouts or for over-capacity errors (Bitly reset their capacity counting every hour), we will crash if errors occur here
-
-Need to handle:
-IGNORING ERROR for http://bit.ly/VFPCJr:BitlyError(u'RATE_LIMIT_EXCEEDED',)
-
 
 Tracking at present:
 -------------------
