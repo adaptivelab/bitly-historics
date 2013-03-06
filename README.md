@@ -34,8 +34,10 @@ or
 You should see 8 tests pass.
 
 To get coverage information use:
+
     $ BITLY_HISTORICS_CONFIG=testing nosetests --cover-html --with-coverage
-and then check the ./cover/index.html file for historics.py (and other files in this project).
+
+and then check the `./cover/index.html` file for historics.py (and other files in this project).
 
 
 Usage:
