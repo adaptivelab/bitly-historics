@@ -4,9 +4,9 @@ Installation:
 ------------
 
     1. Make sure you have MongoDB installed (we run our own version using our mongodb.conf)
-    2. `$ pip install -r requirements.txt  # install Python libraries
+    2. `$ pip install -r requirements.txt`  # install Python libraries
     3. Run MongoDB (noted in next section), either use a global MongoDB or a local one for data separation from other projects (as defined here) (e.g. "$ ./run_log_mongodb.sh" to run a local instance)
-    4. `$ BITLY_HISTORICS_CONFIG=testing nosetests  # test the basic setup (see Testing)
+    4. `$ BITLY_HISTORICS_CONFIG=testing nosetests`  # test the basic setup (see Testing)
 
 Note I had to install "pip install numpy" by hand as pip (for reasons I cannot spot) wouldn't install it before matplotlib and matplotlib depends on numpy.
 
