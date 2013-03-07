@@ -1,7 +1,6 @@
-"""1 liner to explain this project"""
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# http://www.python.org/dev/peps/pep-0263/
+"""Graph stored bitly click data"""
 import argparse
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

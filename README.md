@@ -48,8 +48,8 @@ To get coverage information use:
 and then check the `./cover/index.html` file for historics.py (and other files in this project).
 
 
-Usage:
------
+Usage - gathering data:
+----------------------
 
 First - to get help use:
 
@@ -71,13 +71,29 @@ Next let us request updated click data for every Bitly link that we track. We wo
 
     $ BITLY_HISTORICS_CONFIG=production python historics.py --update-clicks
 
+Usage - graphing:
+----------------
+
+To learn about graphing options:
+
+    $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py 
+
 To draw graphs of all click data for specific hashes:
 
     $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py -g XR1aPQ VWUGMX
 
 To draw graphs per website:
 
-    $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py --d bbc.co.uk
+    $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py --d guardian.co.uk
+
+the above call will generate something like the included `example_graph_output.png` (note the tooltip via the `DataCursor` module).
+
+Usage - CSV export:
+------------------
+
+To get help:
+
+    $ BITLY_HISTORICS_CONFIG=production python extract_data.py --help
 
 To extract a CSV file of clicks per brand (we can also do clicks per day):
 

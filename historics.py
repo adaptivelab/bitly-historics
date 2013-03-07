@@ -1,7 +1,6 @@
-"""1 liner to explain this project"""
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# http://www.python.org/dev/peps/pep-0263/
+"""Gather historic click data from bitly"""
 import argparse
 import time
 from multiprocessing.dummy import Pool
