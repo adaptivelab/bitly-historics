@@ -1,7 +1,7 @@
 What?
 ----
 
-This tool is used to track bitly historic click data for specified websites. We're using it to track click-throughs to certain fashion brands (e.g. topshop.com), building up a historic record of clicks by day. Simple graphing and export facilities are provided, MongoDB is used as a longer term store.
+This tool is used to track bitly historic click data for specified websites. We're using it to track click-throughs to certain brand websites, building up a historic record of clicks by day for analysis and reporting. Some graphing and export facilities are provided (e.g. for output of CSVs for http://datawrapper.de/), MongoDB is used as a longer term store.
 
 Author: ian@morconsulting.com (consulting to http://AdaptiveLab.com) of https://github.com/ianozsvald/
 
@@ -97,9 +97,11 @@ To get help:
 
     $ BITLY_HISTORICS_CONFIG=production python extract_data.py --help
 
-To extract a CSV file of clicks per brand (we can also do clicks per day):
+To extract a CSV file of clicks per website (we can also do clicks per day):
 
-    $ python extract_data.py --ff 2013-02-10T00:00 -d asos.com topman.com topshop.com hm.com urbanoutfitters.com topman.com zara.com urbanoutfitters.co.uk nordstrom.com gap.com americanapparel.net
+    $ python extract_data.py --ff 2013-02-10T00:00 -d guardian.co.uk bbc.co.uk
+
+We can export data that works with http://datawrapper.de/ for super-easy web presentable charts.
 
 Todo:
 ----
