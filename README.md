@@ -88,7 +88,7 @@ To draw graphs per website:
 
 the above call will generate something like the included `example_graph_output.png` (note the tooltip via the `DataCursor` module):
 
-![Example graph output](https://github.com/adaptivelab/bitly-historics/blob/master/example_graph_output.png)
+![Example graph output](https://github.com/adaptivelab/bitly-historics/blob/master/example_graph_output.png?raw=true)
 
 Usage - CSV export:
 ------------------
