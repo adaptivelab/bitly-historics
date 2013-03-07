@@ -86,7 +86,9 @@ To draw graphs per website:
 
     $ BITLY_HISTORICS_CONFIG=production python graph_clicks.py --d guardian.co.uk
 
-the above call will generate something like the included `example_graph_output.png` (note the tooltip via the `DataCursor` module).
+the above call will generate something like the included `example_graph_output.png` (note the tooltip via the `DataCursor` module):
+
+![Example graph output](https://github.com/adaptivelab/bitly-historics/blob/master/example_graph_output.png)
 
 Usage - CSV export:
 ------------------
