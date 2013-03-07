@@ -1,4 +1,5 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 This is a py.test script
 
@@ -6,38 +7,34 @@ NOTE this script contains some extra tests developed by Ian Ozsvald to check if 
 that we need is supported
 
 Example usage on Unix:
-bitly-api-python $ BITLY_ACCESS_TOKEN=<accesstoken> nosetests
+bitly-api-python $ nosetests
 or 'export' the two environment variables prior to running nosetests
 """
-import os
 import sys
 sys.path.append('../')
-import bitly_api
 import unittest
+from config import BITLY_ACCESS_TOKEN
+import bitly_api_extended
 
-BITLY_ACCESS_TOKEN = "BITLY_ACCESS_TOKEN"
 
 class Test(unittest.TestCase):
     def setUp(self):
         """Create a Connection base on username and access token credentials"""
-        if BITLY_ACCESS_TOKEN not in os.environ:
-            raise ValueError("Environment variable '{}' required".format(BITLY_ACCESS_TOKEN))
-        access_token = os.getenv(BITLY_ACCESS_TOKEN)
-        self.bitly = bitly_api.Connection(access_token=access_token)
-
+        access_token = BITLY_ACCESS_TOKEN
+        self.bitly = bitly_api_extended.get_bitly_connection(access_token=access_token)
 
     def testClicksByDay(self):
+        """Test the default clicks_by_day provided by the bitly_api"""
         hsh = "UV5wy8"
         data = self.bitly.clicks_by_day(hsh)
         print data, len(data)
         assert data is not None
         assert len(data) == 1
 
-
     def testClicksBy30Day(self):
+        """Test the monkeypatched days= parameter (in bitly_api_extended)"""
         hsh = "UV5wy8"
         data = self.bitly.clicks_by_day(hsh, days=30)
         print data, len(data)
         assert data is not None
         assert len(data) == 1
-

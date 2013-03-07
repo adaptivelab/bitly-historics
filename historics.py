@@ -6,9 +6,10 @@ import argparse
 import time
 from multiprocessing.dummy import Pool
 import datetime
-import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
-import bitly_api
 from dateutil import parser as dt_parser
+import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
+from bitly_api import BitlyError
+import bitly_api_extended
 
 # Usage:
 # $ BITLY_HISTORICS_CONFIG=production python start_here.py --help
@@ -27,7 +28,8 @@ POOL_SIZE_FOR_BITLY_UPDATES = 10
 
 # bitly api
 access_token = config.BITLY_ACCESS_TOKEN
-bitly = bitly_api.Connection(access_token=access_token)
+#bitly = bitly_api.Connection(access_token=access_token)
+bitly = bitly_api_extended.get_bitly_connection(access_token)
 
 # Bitly API limits
 # http://dev.bitly.com/best_practices.html
@@ -127,7 +129,7 @@ def _update_bitly_clicks(aggregate_link):
             print "Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks']))
             add_clicks_to_mongodb(clicks)
             break  # exit the loop as we've successfully fetched from bitly
-        except bitly_api.BitlyError as err:
+        except BitlyError as err:
             # rarely we see this error, we catch all bitly errors here
             # and wait and then retry
             #raise BitlyError(data.get('status_code', 500), data.get('status_txt', 'UNKNOWN_ERROR'))
@@ -147,7 +149,7 @@ def _update_bitly_clicks(aggregate_link):
                     print "Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message)
                     time.sleep(RATE_LIMIT_SLEEP)  # wait a bit, try again
                     RATE_LIMIT_SLEEP = RATE_LIMIT_SLEEP * 2  # double our wait time
-                    RATE_LIMIT_SLEEP = min(RATE_LIMIT_SLEEP, 30*60)  # max of 30 mins
+                    RATE_LIMIT_SLEEP = min(RATE_LIMIT_SLEEP, 30 * 60)  # max of 30 mins
                 else:
                     # what other errors have we encountered?
                     print "UNKNOWN ERROR:", repr(err)
@@ -157,11 +159,6 @@ def _update_bitly_clicks(aggregate_link):
 def update_bitly_clicks():
     """Update click data for documents that are out of date"""
     bitly_links_to_update = get_bitly_links_to_update()
-
-    # update serially
-    #for aggregate_link in bitly_links_to_update:
-    #    _update_bitly_clicks(aggregate_link)
-
     # update using a thread pool in parallel
     P = Pool(POOL_SIZE_FOR_BITLY_UPDATES)
     P.map(_update_bitly_clicks, bitly_links_to_update)
@@ -197,10 +194,5 @@ if __name__ == "__main__":
         domains = list_domains_we_track()
         P = Pool(POOL_SIZE_FOR_BITLY_UPDATES)
         P.map(get_link_result, [str(domain) for domain in domains])
-        # update serially
-        #for domain in domains:
-        #    domain = str(domain)
-        #    print "Adding any new links for", domain
-        #    get_link_result(domain)
         print "Updating bitly click history for all of our links"
         update_bitly_clicks()

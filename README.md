@@ -26,10 +26,10 @@ Note that we only use a separate MongoDB here as we prefer to separate productio
 Testing:
 -------
 
-    $ BITLY_ACCESS_TOKEN=<bitlytoken> BITLY_HISTORICS_CONFIG=testing nosetests
+    $ BITLY_HISTORICS_CONFIG=testing nosetests
 or 
 
-    $ BITLY_ACCESS_TOKEN=<bitlytoken> BITLY_HISTORICS_CONFIG=testing python -m unittest discover
+    $ BITLY_HISTORICS_CONFIG=testing python -m unittest discover
 
 You should see 8 tests pass.
 
