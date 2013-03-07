@@ -5,8 +5,9 @@ Installation:
 
   1. Make sure you have MongoDB installed (we run our own version using our mongodb.conf)
   2. `$ pip install -r requirements.txt`  # install Python libraries
-  3. Run MongoDB (noted in next section), either use a global MongoDB or a local one for data separation from other projects (as defined here) (e.g. "$ ./run_log_mongodb.sh" to run a local instance)
-  4. `$ BITLY_HISTORICS_CONFIG=testing nosetests`  # test the basic setup (see Testing)
+  3. Create a Bitly token (http://dev.bitly.com/), save it in ./config/bitly_access_token.txt (read by ./config/__init__.py)
+  4. Run MongoDB (noted in next section), either use a global MongoDB or a local one for data separation from other projects (as defined here) (e.g. "$ ./run_log_mongodb.sh" to run a local instance)
+  5. `$ BITLY_HISTORICS_CONFIG=testing nosetests`  # test the basic setup (see Testing)
 
 Note I had to install `pip install numpy` by hand as pip (for reasons I cannot spot) wouldn't install it before matplotlib and matplotlib depends on numpy.
 
@@ -87,6 +88,8 @@ What might go wrong:
 -------------------
 
  * We use bitly's clicks_by_day API call, this is due to be deprecated. Their replacement call gave an aggregate result, not a breakdown by day, so further investigation will be required here.
+ * New error (7th March spotted) UNKNOWN ERROR: BitlyError('<urlopen error [Errno -2] Name or service not known>',) - local web access problem?
+ 
 
 Tracking at present:
 -------------------
