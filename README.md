@@ -1,4 +1,10 @@
+What?
+----
 
+This tool is used to track bitly historic click data for specified websites. We're using it to track click-throughs to certain fashion brands (e.g. topshop.com), building up a historic record of clicks by day. Simple graphing and export facilities are provided, MongoDB is used as a longer term store.
+
+Author: ian@morconsulting.com (consulting to http://AdaptiveLab.com) of https://github.com/ianozsvald/
+When: early 2013
 
 Installation:
 ------------
