@@ -4,6 +4,7 @@ What?
 This tool is used to track bitly historic click data for specified websites. We're using it to track click-throughs to certain fashion brands (e.g. topshop.com), building up a historic record of clicks by day. Simple graphing and export facilities are provided, MongoDB is used as a longer term store.
 
 Author: ian@morconsulting.com (consulting to http://AdaptiveLab.com) of https://github.com/ianozsvald/
+
 When: early 2013
 
 Installation:
@@ -26,7 +27,7 @@ This script expects a default MongoDB instance to be running. To create a versio
 
     $ ./run_log_mongodb.sh
 
-As of March 2012 mongodb.conf refers to `/media/GDRIVEFAT32/SoMA1WkProject/mongodb/<files>` - this drive is mounted via Ian's laptop, the drive is the external 1TB GDRIVE (silver top, black sides). The only special thing about this drive is that it has lots of space, move the mongodb files elsewhere and reconfigure mongodb.conf. This drive uses HFS (Apple's filesystem without journaling) so it can be read by Linux and Macs.
+As of March 2012 `mongodb.conf` refers to `/media/GDRIVEFAT32/SoMA1WkProject/mongodb/<files>` - this drive is mounted via Ian's laptop, the drive is the external 1TB GDRIVE (silver top, black sides). The only special thing about this drive is that it has lots of space, move the mongodb files elsewhere and reconfigure mongodb.conf. This drive uses HFS (Apple's filesystem without journaling) so it can be read by Linux and Macs.
 
 Note that we only use a separate MongoDB here as we prefer to separate production data sources into local projects, if this in run on a server the probably we'd just use the global MongoDB. We don't need any special MongoDB configuration (no sharding or parameter tweaking).
 
