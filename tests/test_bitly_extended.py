@@ -27,7 +27,6 @@ class Test(unittest.TestCase):
         """Test the default clicks_by_day provided by the bitly_api"""
         hsh = "UV5wy8"
         data = self.bitly.clicks_by_day(hsh)
-        print data, len(data)
         assert data is not None
         assert len(data) == 1
 
@@ -35,6 +34,5 @@ class Test(unittest.TestCase):
         """Test the monkeypatched days= parameter (in bitly_api_extended)"""
         hsh = "UV5wy8"
         data = self.bitly.clicks_by_day(hsh, days=30)
-        print data, len(data)
         assert data is not None
         assert len(data) == 1

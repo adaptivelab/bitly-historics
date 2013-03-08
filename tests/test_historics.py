@@ -5,6 +5,7 @@
 import unittest
 import datetime
 import historics
+import tools
 import config
 import fixtures
 
@@ -23,12 +24,12 @@ class Test(unittest.TestCase):
         url_hashes = [("http://bit.ly/Wozuff", "Wozuff"),
                       ("http://bit.ly/Wozuff/", "Wozuff")]
         for url, hsh in url_hashes:
-            returned_hsh = historics.get_hash(url)
+            returned_hsh = tools.get_hash(url)
             self.assertEqual(hsh, returned_hsh)
 
     def test_get_hash2(self):
         """From a search result check we can get a URL hash"""
-        returned_hsh = historics.get_hash(fixtures.links0["aggregate_link"])
+        returned_hsh = tools.get_hash(fixtures.links0["aggregate_link"])
         self.assertEqual("Wozuff", returned_hsh)
 
     def test_clicks_by_day_popularity(self):
@@ -99,6 +100,16 @@ class Test(unittest.TestCase):
         bitly_links_to_update = historics.get_bitly_links_to_update()
         self.assertTrue(len(bitly_links_to_update) == 0, "We've just updated so we don't need to update again but we have {} links to update".format(len(bitly_links_to_update)))
 
+    def test_we_can_add_new_bitly_links_raw(self):
+        canonical_url = "http://bcd.com"
+        title = "some Title"
+        bitly_url = "http://bit.ly/abcdEF"
+        historics.add_entries_to_mongodb(bitly_url, title, canonical_url)
+        self.assertEqual(config.mongo_bitly_links_raw.count(), 1)
+        new_links_raw = config.mongo_bitly_links_raw.find()[0]
+        self.assertEqual(new_links_raw['title'], title)
+        self.assertEqual(new_links_raw['aggregate_link'], bitly_url)
+        self.assertEqual(new_links_raw['url'], canonical_url)
 
 if __name__ == "__main__":
     unittest.main()

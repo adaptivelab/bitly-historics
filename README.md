@@ -59,9 +59,9 @@ To featch new links for the domains we're tracking, and all the click history fo
 
     $ BITLY_HISTORICS_CONFIG=production python historics.py -e
 
-To add a domain, we ask Bitly for all the Bitly links for asos.com:
+To add a domain, we ask Bitly for all the Bitly links for bbc.co.uk:
 
-    $ BITLY_HISTORICS_CONFIG=production python historics.py --a asos.com
+    $ BITLY_HISTORICS_CONFIG=production python historics.py --a bbc.co.uk
 
 and our mongodb is updated with the snapshot of links that they provide.
 
@@ -70,6 +70,21 @@ We can run this same call on another day to get an updated set of links, we'll a
 Next let us request updated click data for every Bitly link that we track. We won't request an update if we've already recorded new data in the last 24 hours.
 
     $ BITLY_HISTORICS_CONFIG=production python historics.py --update-clicks
+
+Usage - gathering data via tweets:
+---------------------------------
+
+We can import data via Twitter by reading tweets from specified accounts and exporting a list of bitly links which can be later imported:
+
+   $ BITLY_HISTORICS_CONFIG=production python get_non_bitly_links.py --screen_names bbcnews -n 20 -o new_links.txt
+
+The above writes a file `new_links.txt` containing bit.ly names inferred from (in this case) the BBC shortener bbc.in, these links are extracted from the first n tweets read on the specified Twitter accounts.
+
+We can import this new list of bit.ly links using:
+
+    $ BITLY_HISTORICS_CONFIG=production python historics.py --add-from-file new_links.txt
+
+NOTE LIMITATION - we only match and export on hard-coded domains (bbc and asos at present), this should be refactored and pulled into a config file.
 
 Usage - graphing:
 ----------------
@@ -99,9 +114,13 @@ To get help:
 
 To extract a CSV file of clicks per website (we can also do clicks per day):
 
-    $ python extract_data.py --ff 2013-02-10T00:00 -d guardian.co.uk bbc.co.uk
+    $ BITLY_HISTORICS_CONFIG=production python extract_data.py --ff 2013-02-10T00:00 -d guardian.co.uk bbc.co.uk
 
 We can export data that works with http://datawrapper.de/ for super-easy web presentable charts.
+
+To extract summaries of click data per link for a domain, writing to e.g. "link_report_guardian.co.uk.csv":
+
+    $ BITLY_HISTORICS_CONFIG=production python extract_data.py --domains guardian.co.uk --link-report link_report
 
 Todo:
 ----
@@ -116,7 +135,7 @@ What might go wrong:
 
  * We use bitly's clicks_by_day API call, this is due to be deprecated. Their replacement call gave an aggregate result, not a breakdown by day, so further investigation will be required here.
  * New error (7th March spotted) UNKNOWN ERROR: BitlyError('<urlopen error [Errno -2] Name or service not known>',) - local web access problem?
- 
+ * We don't use mocks for web-facing calls (e.g. calls to bitly for search, link_info, click data etc and for the requests library) - we really should - running coverage during the unittests will highlight this 
 
 Tracking at present:
 -------------------

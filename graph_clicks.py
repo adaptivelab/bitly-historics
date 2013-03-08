@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datacursor import DataCursor
 import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
-import historics
+import tools
 
 # Usage:
 # Graph all of our data for a hash
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     if args.domain:
         documents = config.mongo_bitly_links_raw.find({"domain": args.domain})
-        hashes = [historics.get_hash(document['aggregate_link']) for document in documents]
+        hashes = [tools.get_hash(document['aggregate_link']) for document in documents]
         plotted_lines = []
         for global_hash in hashes:
             clicks = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})

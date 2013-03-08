@@ -37,17 +37,23 @@ def get_links_for_domain(domain, filter_from, filter_to):
     for global_hash, bitlyurl, url in hashes_bitlyurl_urls:
         clicks = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
         nbr_positive_click_days = 0  # nbr days that had >=1 click
-        total_clicks = 0
+        total_clicks = 0  # count total nbr of clicks for this link
+        dates_with_activity = []  # days when >=1 click occurred
         if clicks is not None:
             for date, clicks_per_day in clicks['clicks']:
                 if clicks_per_day > 0:
-                    nbr_positive_click_days += 1
                     total_clicks += clicks_per_day
+                    dates_with_activity.append(date)
+
+        nbr_positive_click_days = len(dates_with_activity)
+        first_clicked_datetime = min(dates_with_activity)
+        first_clicked = datetime.date(first_clicked_datetime.year, first_clicked_datetime.month, first_clicked_datetime.day)
         bitlyurl = bitlyurl + "+"  # add + and we get statistics via bitly.com in the browser
         info_per_hash[global_hash] = {'nbr_positive_click_days': nbr_positive_click_days,
                                       'bitly_url': bitlyurl,
                                       'url': url,
-                                      'total_clicks': total_clicks}
+                                      'total_clicks': total_clicks,
+                                      'first_clicked': first_clicked}
     return info_per_hash
 
 

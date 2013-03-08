@@ -9,6 +9,7 @@ from dateutil import parser as dt_parser
 import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
 from bitly_api import BitlyError
 import bitly_api_extended
+import tools
 
 # Usage:
 # $ BITLY_HISTORICS_CONFIG=production python start_here.py --help
@@ -33,16 +34,6 @@ bitly = bitly_api_extended.get_bitly_connection(access_token)
 # Bitly API limits
 # http://dev.bitly.com/best_practices.html
 # max 5 concurrent connections, per-minute and per-hour rate limits
-
-
-def get_hash(bitly_url):
-    """Return 'Wozuff' from a link like 'http://bit.ly/Wozuff'"""
-    url_pattern = "http://bit.ly/"
-    assert bitly_url.startswith(url_pattern)
-    hsh = bitly_url[len(url_pattern):]
-    if hsh.endswith("/"):
-        hsh = hsh[:-1]
-    return hsh
 
 
 def get_popularity_per_day(clicks_by_day_result):
@@ -110,7 +101,7 @@ def get_bitly_links_to_update():
     recent_cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=config.UPDATE_FROM_N_HOURS_AGO)
     for link in all_links:
         aggregate_link = link['aggregate_link']
-        global_hash = get_hash(aggregate_link)
+        global_hash = tools.get_hash(aggregate_link)
         clicks = config.mongo_bitly_clicks.find_one({'global_hash': global_hash})
         updated_at = config.A_LONG_TIME_AGO
         if clicks:
@@ -169,13 +160,66 @@ def list_domains_we_track():
     return domains
 
 
+def add_entries_to_mongodb(bitly_url, title, canonical_url, domain):
+    """Add an entry into mongodb's bitly_links_raw collection"""
+    doc = {'url': canonical_url,
+           'title': title,
+           'domain': domain,
+           'aggregate_link': bitly_url}
+    config.mongo_bitly_links_raw.save(doc)
+
+
+def get_title_canonical_url_from(bitly_url):
+    result = bitly.link_info(bitly_url)
+    # Example result:
+    # {u'content_length': 127541, u'category': u'text', u'domain': u'www.bbc.co.uk', u'original_url': u'http://www.bbc.co.uk/news/uk-england-birmingham-21711661#TWEET650950',
+    # u'html_title': u"BBC News - Christina Edkins stabbing: Bus passengers 'heard screaming'", u'favicon_url': u'http://www.bbc.co.uk/favicon.ico', u'aggregate_link': u'http://bit.ly/WPg3gl',
+    # u'content_type': u'text/html', u'indexed': 1362753138, u'canonical_url': u'http://www.bbc.co.uk/news/uk-england-birmingham-21711661'}
+    aggregate_link = result['aggregate_link']
+    html_title = result['html_title']
+    canonical_url = result['canonical_url']
+    domain = result['domain']
+    if domain.startswith('www.'):
+        # chop off a leading www (the bitly search result does not seem to
+        # include www for domains!
+        domain = domain[len('www.'):]
+    return aggregate_link, html_title, canonical_url, domain
+
+
+def add_from_file(filename):
+    """Read list of bit.ly links from file, add to mongodb"""
+    #lines = [row.strip() for row in open(filename).readlines()]
+    lines = [row.strip().split(',') for row in open(filename).readlines()]
+    for bitly_url, desired_domain in lines:
+        aggregate_link, html_title, canonical_url, domain = get_title_canonical_url_from(bitly_url)
+        # get the aggregate_url which should be canonical at bitly's end
+        if domain == desired_domain:
+            existing_document = config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link})
+            if not existing_document:
+                print aggregate_link, html_title, canonical_url
+                print "Adding:", aggregate_link
+                add_entries_to_mongodb(aggregate_link, html_title, canonical_url, domain)
+            else:
+                print "We already seem to have", bitly_url,
+                if bitly_url != aggregate_link:
+                    print " aggregate_link version", aggregate_link
+                else:
+                    print
+        else:
+            print "Ignoring off-topic domain:", domain
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Project description')
     parser.add_argument('--add-domain', '-a', help='Add or update domain e.g. "asos.com"')
+    parser.add_argument('--add-from-file', '-f', help="Add bit.ly links from a text file (bypassing bitly.com search) '--add-from-file new_links.txt'")
     parser.add_argument('--update-clicks', '-u', action="store_true", help='Fetch updated click data for all out-of-date bitly links')
     parser.add_argument('--list-domains', '-l', action="store_true", help='List the distinct domains (e.g. ["asos.com", "bbc.co.uk"]) that we track')
     parser.add_argument('--update-everything', '-e', action="store_true", help="Add all new URLs for existing domains and then update click history for all our links")
     args = parser.parse_args()
+
+    if args.add_from_file:
+        add_from_file(args.add_from_file)
 
     if args.add_domain:
         # get list of links for a root site

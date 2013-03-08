@@ -5,6 +5,8 @@ import os
 import datetime
 import pymongo
 
+from twitter_secrets import *
+
 # Read BITLY_HISTORICS_CONFIG environment variable (raise error if missing or badly
 # configured), use this to decide on our config and import the relevant python
 # file
@@ -32,7 +34,7 @@ BITLY_ACCESS_TOKEN = open(BITLY_ACCESS_TOKEN_FILENAME).readline().strip()
 # Default datetime to use to indicate that a Document is out of date
 A_LONG_TIME_AGO = datetime.datetime(1970, 1, 1)
 # Number of hours that we're out of date before we fetch new click data
-UPDATE_FROM_N_HOURS_AGO = 24
+UPDATE_FROM_N_HOURS_AGO = 48  # 24
 # Collect N days worth of historic click data
 NUMBER_OF_DAYS_DATA_TO_COLLECT = 30
 
