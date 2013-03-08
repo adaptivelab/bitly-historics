@@ -14,3 +14,5 @@ python-dateutil==2.1
 six==1.2.0
 wmctrl==0.1
 wsgiref==0.1.2
+twitter-text-python==1.0.0.2
+python-twitter==0.8.7
