@@ -36,19 +36,6 @@ bitly = bitly_api_extended.get_bitly_connection(access_token)
 # max 5 concurrent connections, per-minute and per-hour rate limits
 
 
-def get_popularity_per_day(clicks_by_day_result):
-    """Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
-    popularity_per_day = []
-    clicks_list = clicks_by_day_result[0].get('clicks', [])
-    for click_dict in clicks_list:
-        clicks = click_dict["clicks"]  # e.g. 113
-        day_start = click_dict["day_start"]  # e.g. 1359003600
-        dt = dt_parser.parse(time.asctime(time.gmtime(day_start)))
-        popularity_per_day.append((dt, clicks))
-    popularity_per_day.sort()
-    return popularity_per_day
-
-
 def add_links_raw_to_mongodb(links):
     """Add links to mongodb if not already present"""
     for link in links:
@@ -56,30 +43,6 @@ def add_links_raw_to_mongodb(links):
         aggregate_link = link['aggregate_link']
         if not config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link}):
             config.mongo_bitly_links_raw.save(link)
-
-
-def add_clicks_to_mongodb(click_response):
-    """Add clicks to mongodb if not already present"""
-    # create full bitly link (as stored in links from a bitly search)
-    global_hash = click_response[0]['global_hash']
-    popularity_per_day = get_popularity_per_day(click_response)
-    document = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
-    known_clicks = {}
-    if document:
-        # we have an entry so we append our datetime & click counts
-        bitly_clicks = document["clicks"]
-        known_clicks = {day_start: clicks for day_start, clicks in bitly_clicks}
-        for day_start, nbr_clicks in popularity_per_day:
-            known_clicks[day_start] = nbr_clicks
-        # turn the dict back into a sorted list
-        bitly_clicks = [(day_start, clicks) for day_start, clicks in known_clicks.items()]
-        bitly_clicks.sort()
-        document["clicks"] = bitly_clicks
-    else:
-        document = {"global_hash": global_hash,
-                    "clicks": popularity_per_day}
-    document['updated_at'] = datetime.datetime.utcnow()
-    config.mongo_bitly_clicks.save(document)
 
 
 def get_link_result(domain):
@@ -109,6 +72,43 @@ def get_bitly_links_to_update():
         if updated_at < recent_cutoff:
             bitly_links_to_update.append(aggregate_link)
     return bitly_links_to_update
+
+
+def get_popularity_per_day(clicks_by_day_result):
+    """Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
+    popularity_per_day = []
+    clicks_list = clicks_by_day_result[0].get('clicks', [])
+    for click_dict in clicks_list:
+        clicks = click_dict["clicks"]  # e.g. 113
+        day_start = click_dict["day_start"]  # e.g. 1359003600
+        dt = dt_parser.parse(time.asctime(time.gmtime(day_start)))
+        popularity_per_day.append((dt, clicks))
+    popularity_per_day.sort()
+    return popularity_per_day
+
+
+def add_clicks_to_mongodb(click_response):
+    """Add clicks to mongodb if not already present"""
+    # create full bitly link (as stored in links from a bitly search)
+    global_hash = click_response[0]['global_hash']
+    popularity_per_day = get_popularity_per_day(click_response)
+    document = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
+    known_clicks = {}
+    if document:
+        # we have an entry so we append our datetime & click counts
+        bitly_clicks = document["clicks"]
+        known_clicks = {day_start: clicks for day_start, clicks in bitly_clicks}
+        for day_start, nbr_clicks in popularity_per_day:
+            known_clicks[day_start] = nbr_clicks
+        # turn the dict back into a sorted list
+        bitly_clicks = [(day_start, clicks) for day_start, clicks in known_clicks.items()]
+        bitly_clicks.sort()
+        document["clicks"] = bitly_clicks
+    else:
+        document = {"global_hash": global_hash,
+                    "clicks": popularity_per_day}
+    document['updated_at'] = datetime.datetime.utcnow()
+    config.mongo_bitly_clicks.save(document)
 
 
 def _update_bitly_clicks(aggregate_link):
