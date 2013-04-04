@@ -31,6 +31,7 @@ from dateutil import parser as dt_parser
 
 
 def get_links_for_domain(domain, filter_from, filter_to):
+    """Build dict of click stats for all links pointing at a domain"""
     documents = config.mongo_bitly_links_raw.find({"domain": domain})
     hashes_bitlyurl_urls = [(historics.get_hash(document['aggregate_link']), document['aggregate_link'], document['url']) for document in documents]
     info_per_hash = {}

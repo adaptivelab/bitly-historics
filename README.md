@@ -130,6 +130,8 @@ Coverage testing reveals that historics.get_link_result and historics.update_bit
 Build a list of domains we want to automatically track
 during update go fetch all new links these domains and then fetch their history if necessary (currently we add new links for existing domains by calling --add again)
 
+Stop collecting data for links that haven't had any clicks for X days (e.g. if no clicks after a week, assume it is a dead link) - might lose some interesting reoccuring stories?
+
 What might go wrong:
 -------------------
 
