@@ -13,8 +13,10 @@ or 'export' the two environment variables prior to running nosetests
 import sys
 sys.path.append('../')
 import unittest
+import datetime
 from config import BITLY_ACCESS_TOKEN
 import bitly_api_extended
+import fixtures
 
 
 class Test(unittest.TestCase):
@@ -36,3 +38,35 @@ class Test(unittest.TestCase):
         data = self.bitly.clicks_by_day(hsh, days=30)
         assert data is not None
         assert len(data) == 1
+
+    def testLinkClicks(self):
+        """Test bitly's original v3/link/clicks method"""
+        link = "http://bitly.com/UV5wy8"
+        result = self.bitly.link_clicks(link=link, rollup=False, unit="day")
+        # we *expect* to get a set of results but it is always possible that
+        # bitly has reset the data for this link. To verify manually visit:
+        # http://bitly.com/UV5wy8+ to see their web stats panel (it should show
+        # a spike of data around late November 2012 for a week, then very low
+        # numbers)
+        self.assertTrue(len(result) > 0, len(result))
+        # we expect that result looks like:
+        # [{u'clicks': 1, u'dt': 1362456000},
+        # {u'clicks': 2, u'dt': 1358395200}, ...]
+        res0 = result[0]
+        self.assertIsInstance(res0['clicks'], int)
+        self.assertIsInstance(res0['dt'], int)
+        # extract the timestamp, confirm that it is a date
+        dt = datetime.datetime.fromtimestamp(res0['dt'])
+        # it really ought to be 2012 otherwise something odd is happening in
+        # their data
+        self.assertTrue(dt.year > 2010, dt)
+
+        # now repeat the same test using fixture data (based on a portion of
+        # results from the above URL)
+        result = fixtures.link_clicks0
+        self.assertTrue(len(result) > 0, len(result))
+        res0 = result[0]
+        self.assertIsInstance(res0['clicks'], int)
+        self.assertIsInstance(res0['dt'], int)
+        dt = datetime.datetime.fromtimestamp(res0['dt'])
+        self.assertTrue(dt.year > 2010, dt)

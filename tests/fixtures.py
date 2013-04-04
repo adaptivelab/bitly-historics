@@ -99,3 +99,18 @@ clicks1 = [{u'clicks': [{u'clicks': 115, u'day_start': 1359003600},
             u'global_hash': u'Wozuff',
             u'hash': u'Wozuff',
             u'user_hash': u'Wozuff'}]
+
+
+link_clicks0 = [{u'clicks': 1, u'dt': 1362456000},
+                {u'clicks': 2, u'dt': 1358395200},
+                {u'clicks': 2, u'dt': 1357876800},
+                {u'clicks': 2, u'dt': 1355976000},
+                {u'clicks': 1, u'dt': 1355630400}]
+
+# same number but shifted by 1 day from link_clicks0
+link_clicks1 = [{u'clicks': 2, u'dt': 1358395200},
+                {u'clicks': 2, u'dt': 1357876800},
+                {u'clicks': 2, u'dt': 1355976000},
+                {u'clicks': 1, u'dt': 1355630400},
+                {u'clicks': 2, u'dt': 1355457600}]
+
