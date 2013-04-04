@@ -36,6 +36,49 @@ bitly = bitly_api_extended.get_bitly_connection(access_token)
 # max 5 concurrent connections, per-minute and per-hour rate limits
 
 
+def process_link_clicks_response(response):
+    """Given a response from bitly turn the timestamps into datetime objects, return a sorted list of pairs of dt and clicks"""
+    sorted_link_clicks = []
+    for d in response:
+        clicks = d['clicks']
+        dt = datetime.datetime.fromtimestamp(d['dt'])
+        sorted_link_clicks.append((dt, clicks))
+    sorted_link_clicks.sort()
+    return sorted_link_clicks
+
+
+def get_existing_bitly_clicks_for(hsh):
+    """Get record from mongo's bitly_clicks for this hash"""
+    document = config.mongo_bitly_clicks.find_one({"global_hash": hsh})
+    if not document:
+        document = {"global_hash": hsh,
+                    "clicks": []}
+    return document
+
+
+def store_bitly_clicks_for(document):
+    """Given a hash, store the document with its updated clicks"""
+    document['updated_at'] = datetime.datetime.utcnow()
+    config.mongo_bitly_clicks.save(document)
+
+
+def add_response_to_document(response, document):
+    """Add new clicks to our document, merging with existing clicks"""
+    new_clicks = process_link_clicks_response(response)
+    existing_clicks = document['clicks']
+    # build a dictionary of existing (and possibly outdated) clicks
+    clicks_dict = {}
+    for dt, clicks in existing_clicks:
+        clicks_dict[dt] = clicks
+    # merge new clicks into dict
+    for dt, clicks in new_clicks:
+        clicks_dict[dt] = clicks
+    print clicks_dict
+    dt_clicks = [(item[0], item[1]) for item in clicks_dict.items()]
+    dt_clicks.sort()
+    document['clicks'] = dt_clicks
+
+
 def add_links_raw_to_mongodb(links):
     """Add links to mongodb if not already present"""
     for link in links:
@@ -76,6 +119,7 @@ def get_bitly_links_to_update():
 
 def get_popularity_per_day(clicks_by_day_result):
     """Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
+    # THIS WILL BE OBSOLETE
     popularity_per_day = []
     clicks_list = clicks_by_day_result[0].get('clicks', [])
     for click_dict in clicks_list:
@@ -89,6 +133,7 @@ def get_popularity_per_day(clicks_by_day_result):
 
 def add_clicks_to_mongodb(click_response):
     """Add clicks to mongodb if not already present"""
+    # THIS WILL BE OBSOLETE
     # create full bitly link (as stored in links from a bitly search)
     global_hash = click_response[0]['global_hash']
     popularity_per_day = get_popularity_per_day(click_response)

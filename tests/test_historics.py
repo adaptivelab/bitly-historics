@@ -14,6 +14,87 @@ import fixtures
 # $ BITLY_HISTORICS_CONFIG=testing python -m unittest discover
 
 
+class TestLinkClicks(unittest.TestCase):
+    """"""
+    def setUp(self):
+        config.mongo_bitly_links_raw.drop()
+        config.mongo_bitly_clicks.drop()
+
+    def test_empty_response(self):
+        empty_response = historics.process_link_clicks_response([])
+        self.assertTrue(len(empty_response) == 0)
+
+    def test_proper_response(self):
+        link_clicks = historics.process_link_clicks_response(fixtures.link_clicks0)
+        self.assertTrue(len(link_clicks) == len(fixtures.link_clicks0))
+        last_dt = link_clicks[0][0]
+        for dt, clicks in link_clicks[1:]:
+            self.assertTrue(dt > last_dt)
+            last_dt = dt
+            self.assertTrue(clicks >= 0)
+
+    def test_get_existing_bitly_clicks_for_norecord(self):
+        hsh = "nothing"
+        document = historics.get_existing_bitly_clicks_for(hsh)
+        self.assertTrue(document['clicks'] == [])
+
+        # we have a new document, updated_at is only added on a save
+        self.assertTrue('updated_at' not in dir(document))
+        dt_now = datetime.datetime.utcnow()
+        historics.store_bitly_clicks_for(document)
+        self.assertTrue(document['updated_at'] >= dt_now)
+
+        # test that we get back the populated document (not a fresh one)
+        document2 = historics.get_existing_bitly_clicks_for(hsh)
+        self.assertTrue('updated_at' in document2)
+        self.assertTrue(document['_id'] == document2['_id'])
+
+        # get a second document, store, check they're distinct from each other
+        hsh = "nothingelse"
+        document3 = historics.get_existing_bitly_clicks_for(hsh)
+        historics.store_bitly_clicks_for(document3)
+        self.assertTrue(document['_id'] != document3['_id'])
+
+    def test_add_new_clicks_to_document(self):
+        hsh = "nothing"
+        document = historics.get_existing_bitly_clicks_for(hsh)
+        self.assertTrue(document['clicks'] == [])
+
+        response = fixtures.link_clicks0
+        historics.add_response_to_document(response, document)
+        self.assertTrue(len(document['clicks']) == len(response))
+
+        # test we don't double-add
+        historics.add_response_to_document(response, document)
+        self.assertTrue(len(document['clicks']) == len(response))
+
+        # we have a new document, updated_at is only added on a save
+        self.assertTrue('updated_at' not in dir(document))
+        dt_now = datetime.datetime.utcnow()
+        historics.store_bitly_clicks_for(document)
+        self.assertTrue(document['updated_at'] >= dt_now)
+
+        # test that we get back the populated document (not a fresh one)
+        document2 = historics.get_existing_bitly_clicks_for(hsh)
+        self.assertTrue('updated_at' in document2)
+        self.assertTrue(document['_id'] == document2['_id'])
+
+        response2 = fixtures.link_clicks1
+        historics.add_response_to_document(response2, document)
+        self.assertTrue(len(document['clicks']) == 6, len(document['clicks']))  # we want a merge of the two fixtures
+
+        # iterate through clicks and check they're in sorted datetime order
+        last_dt = document['clicks'][0][0]
+        for dt, clicks in document['clicks'][1:]:
+            self.assertTrue(dt > last_dt)
+            last_dt = dt
+            self.assertTrue(clicks >= 0)
+
+        self.assertTrue(document['clicks'][0] == (datetime.datetime(2012, 12, 14, 4, 0), 2))
+        self.assertTrue(document['clicks'][1] == (datetime.datetime(2012, 12, 16, 4, 0), 1))
+        self.assertTrue(document['clicks'][5] == (datetime.datetime(2013, 3, 5, 4, 0), 1))
+
+
 class Test(unittest.TestCase):
     def setUp(self):
         config.mongo_bitly_links_raw.drop()
