@@ -104,7 +104,8 @@ class Test(unittest.TestCase):
         canonical_url = "http://bcd.com"
         title = "some Title"
         bitly_url = "http://bit.ly/abcdEF"
-        historics.add_entries_to_mongodb(bitly_url, title, canonical_url)
+        domain = "bcd.com"
+        historics.add_entries_to_mongodb(bitly_url, title, canonical_url, domain)
         self.assertEqual(config.mongo_bitly_links_raw.count(), 1)
         new_links_raw = config.mongo_bitly_links_raw.find()[0]
         self.assertEqual(new_links_raw['title'], title)
