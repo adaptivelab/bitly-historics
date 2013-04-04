@@ -15,18 +15,19 @@ class Test(unittest.TestCase):
 
     def test_extract_bitly_hashes(self):
         """Check we extract the URLs that we expect to match"""
-        all_urls_result = ([u'http://bbc.in/WOYkWi'], set(['WOYkWi']))
-        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonyms)
+        all_urls_result = ([u'http://bbc.in/WOYkWi'], set([(u'WOYkWi', u'bbc.co.uk')]))
+        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonym_domain_names)
+        expected_result = all_urls_result[1]
+        #import pdb; pdb.set_trace()
+        self.assertEqual(expected_result, matched_hashes)
+
+        all_urls_result = ([u'http://bbc.in/WOYkWi', u'http://wedonotcare.com'], set([('WOYkWi', 'bbc.co.uk')]))
+        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonym_domain_names)
         expected_result = all_urls_result[1]
         self.assertEqual(expected_result, matched_hashes)
 
-        all_urls_result = ([u'http://bbc.in/WOYkWi', u'http://wedonotcare.com'], set(['WOYkWi']))
-        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonyms)
-        expected_result = all_urls_result[1]
-        self.assertEqual(expected_result, matched_hashes)
-
-        all_urls_result = ([u'http://bbc.in/WOYkWi', u'http://asos.to/XXXX', u'http://wedonotcare.com'], set(['WOYkWi', 'XXXX']))
-        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonyms)
+        all_urls_result = ([u'http://bbc.in/WOYkWi', u'http://asos.to/XXXX', u'http://wedonotcare.com'], set([('WOYkWi', 'bbc.co.uk'), ('XXXX', 'asos.com')]))
+        matched_hashes = get_non_bitly_links.extract_bitly_hashes(all_urls_result[0], get_non_bitly_links.bitly_pseudonym_domain_names)
         expected_result = all_urls_result[1]
         self.assertEqual(expected_result, matched_hashes)
 
