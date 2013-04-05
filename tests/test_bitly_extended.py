@@ -39,7 +39,7 @@ class Test(unittest.TestCase):
         assert data is not None
         assert len(data) == 1
 
-    def testLinkClicks(self):
+    def testLinkClicksDaily(self):
         """Test bitly's original v3/link/clicks method"""
         link = "http://bitly.com/UV5wy8"
         result = self.bitly.link_clicks(link=link, rollup=False, unit="day")

@@ -94,6 +94,22 @@ class TestLinkClicks(unittest.TestCase):
         self.assertTrue(document['clicks'][1] == (datetime.datetime(2012, 12, 16, 4, 0), 1))
         self.assertTrue(document['clicks'][5] == (datetime.datetime(2013, 3, 5, 4, 0), 1))
 
+    def test_add_new_hourly_clicks_to_document(self):
+        """Use hourly click data to update a new document"""
+        hsh = "nothing"
+        document = historics.get_existing_bitly_clicks_for(hsh)
+        self.assertTrue(document['clicks'] == [])
+
+        response = fixtures.link_clicks2
+        historics.add_response_to_document(response, document)
+        self.assertTrue(len(document['clicks']) == len(response))
+
+        res0 = response[0]
+        self.assertIsInstance(res0['clicks'], int)
+        self.assertIsInstance(res0['dt'], int)
+        dt = datetime.datetime.fromtimestamp(res0['dt'])
+        self.assertTrue(dt.year > 2010, dt)
+
 
 class Test(unittest.TestCase):
     def setUp(self):
