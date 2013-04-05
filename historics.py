@@ -95,12 +95,12 @@ def get_link_result(domain):
     """Search for domain (e.g. "asos.com"), get a set of link results, add to mongo"""
     bitly_links_for_this_domain = config.mongo_bitly_links_raw.find({'domain': domain})
     nbr_bitly_links_for_this_domain = bitly_links_for_this_domain.count()
-    print("Found {} items that we already track".format(nbr_bitly_links_for_this_domain))
+    config.logger.info("Found {} items that we already track for {}".format(nbr_bitly_links_for_this_domain, domain))
     links_for_site = bitly.search(domain=domain, query="", limit=1000)
     add_links_raw_to_mongodb(links_for_site)
     bitly_links_for_this_domain = config.mongo_bitly_links_raw.find({'domain': domain})
     nbr_bitly_links_for_this_domain_after_update = bitly_links_for_this_domain.count()
-    print("Found {} new links for {}".format(nbr_bitly_links_for_this_domain_after_update - nbr_bitly_links_for_this_domain, domain))
+    config.logger.info("Found {} new links for {}".format(nbr_bitly_links_for_this_domain_after_update - nbr_bitly_links_for_this_domain, domain))
     return links_for_site
 
 
@@ -125,7 +125,7 @@ def get_bitly_links_to_update():
             updated_at = clicks['updated_at']
             hash_is_active = _hash_is_active(updated_at, clicks['clicks'])
             if not hash_is_active:
-                print("THIS HASH IS CONSIDERED TO BE OUT OF DATE", aggregate_link)
+                config.logger.info("THIS HASH IS CONSIDERED TO BE OUT OF DATE:" + repr(aggregate_link))
         if updated_at < recent_cutoff and hash_is_active:
             bitly_links_to_update.append(aggregate_link)
     return bitly_links_to_update
@@ -204,25 +204,29 @@ def _update_bitly_clicks(aggregate_link):
             #502
             if err.code == 502:
                 # IGNORING ERROR for http://bit.ly/VFPCJr:BitlyError(u'RATE_LIMIT_EXCEEDED',)
-                print("IGNORING ERROR for {}:{}".format(aggregate_link, repr(err)))
+                #print("IGNORING ERROR for {}:{}".format(aggregate_link, repr(err)))
+                config.logger.info("IGNORING ERROR for {}:{}".format(aggregate_link, repr(err)))
                 time.sleep(0.1)  # pause for a moment and then we retry
-                print("Retrying...")
             else:
                 if err.code == 403:
                     # err.message u'RATE_LIMIT_EXCEEDED'
-                    print("Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message))
+                    #print("Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message))
+                    config.logger.info("Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message))
                     time.sleep(RATE_LIMIT_SLEEP)  # wait a bit, try again
                     RATE_LIMIT_SLEEP = RATE_LIMIT_SLEEP * 2  # double our wait time
                     RATE_LIMIT_SLEEP = min(RATE_LIMIT_SLEEP, 30 * 60)  # max of 30 mins
                 else:
                     # what other errors have we encountered?
-                    print("UNKNOWN ERROR:", repr(err))
+                    config.logger.error("UNKNOWN ERROR: " + repr(err))
                     #import pdb; pdb.set_trace()  # is there an error code for over capacity?
 
 
 def update_bitly_clicks():
     """Update click data for documents that are out of date"""
     bitly_links_to_update = get_bitly_links_to_update()
+    if bitly_links_to_update:
+        config.logger.info("About to update {} links".format(len(bitly_links_to_update)))
+
     # update using a thread pool in parallel
     P = Pool(POOL_SIZE_FOR_BITLY_UPDATES)
     P.map(_update_bitly_clicks, bitly_links_to_update)
