@@ -126,6 +126,29 @@ class TestLinkClicks(unittest.TestCase):
         dt = datetime.datetime.fromtimestamp(res0['dt'])
         self.assertTrue(dt.year > 2010, dt)
 
+        # force a bit.ly record to be attached to our click history
+        # and confirm that it doesn't need updating, as updated_at
+        # is too recent
+        canonical_url = "http://bcd.com"
+        title = "some Title"
+        bitly_url = "http://bit.ly/nothing"
+        domain = "bcd.com"
+        historics.add_entries_to_mongodb(bitly_url, title, canonical_url, domain)
+        self.assertEqual(config.mongo_bitly_links_raw.count(), 1)
+
+        historics.store_bitly_clicks_for(document)
+        links_to_update = historics.get_bitly_links_to_update()
+        self.assertTrue(len(links_to_update) == 0)
+
+        # force the updated_at time to be a long while ago
+        document['updated_at'] = datetime.datetime(2010, 1, 1, 1, 1)
+        config.mongo_bitly_clicks.save(document)
+        hash_is_active = historics._hash_is_active(document['updated_at'], document['clicks'])
+        self.assertTrue(hash_is_active)
+        # confirm that we need to update 1 record
+        links_to_update = historics.get_bitly_links_to_update()
+        self.assertTrue(len(links_to_update) == 1)
+
 
 class Test(unittest.TestCase):
     def setUp(self):
