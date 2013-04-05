@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Gather historic click data from bitly"""
+from __future__ import division  # 1/2 == 0.5, as in Py3
+from __future__ import absolute_import  # avoid hiding global modules with locals
+from __future__ import print_function  # force use of print("hello")
+from __future__ import unicode_literals  # force unadorned strings "" to be unicode without prepending u""
 import argparse
 import time
 from multiprocessing.dummy import Pool
@@ -73,7 +77,6 @@ def add_response_to_document(response, document):
     # merge new clicks into dict
     for dt, clicks in new_clicks:
         clicks_dict[dt] = clicks
-    print clicks_dict
     dt_clicks = [(item[0], item[1]) for item in clicks_dict.items()]
     dt_clicks.sort()
     document['clicks'] = dt_clicks
@@ -92,12 +95,12 @@ def get_link_result(domain):
     """Search for domain (e.g. "asos.com"), get a set of link results, add to mongo"""
     bitly_links_for_this_domain = config.mongo_bitly_links_raw.find({'domain': domain})
     nbr_bitly_links_for_this_domain = bitly_links_for_this_domain.count()
-    print "Found {} items that we already track".format(nbr_bitly_links_for_this_domain)
+    print("Found {} items that we already track".format(nbr_bitly_links_for_this_domain))
     links_for_site = bitly.search(domain=domain, query="", limit=1000)
     add_links_raw_to_mongodb(links_for_site)
     bitly_links_for_this_domain = config.mongo_bitly_links_raw.find({'domain': domain})
     nbr_bitly_links_for_this_domain_after_update = bitly_links_for_this_domain.count()
-    print "Found {} new links for {}".format(nbr_bitly_links_for_this_domain_after_update - nbr_bitly_links_for_this_domain, domain)
+    print("Found {} new links for {}".format(nbr_bitly_links_for_this_domain_after_update - nbr_bitly_links_for_this_domain, domain))
     return links_for_site
 
 
@@ -156,13 +159,28 @@ def add_clicks_to_mongodb(click_response):
     config.mongo_bitly_clicks.save(document)
 
 
+def _get_new_clicks_add_to_mongodb(aggregate_link):
+    # THIS WILL BE OBSOLETE
+    clicks = bitly.clicks_by_day(shortUrl=aggregate_link, days=config.NUMBER_OF_DAYS_DATA_TO_COLLECT)
+    print("Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks'])))
+    add_clicks_to_mongodb(clicks)
+
+
+def _get_new_link_clicks_then_add_to_mongodb(aggregate_link):
+    NEW_LINK_CLICKS_UNIT = "hour"  # "hour" for hourly clicks, "day" for daily click totals
+    response = bitly.link_clicks(link=aggregate_link, rollup=False, unit=NEW_LINK_CLICKS_UNIT)
+    hsh = tools.get_hash(aggregate_link)
+    document = get_existing_bitly_clicks_for(hsh)
+    add_response_to_document(response, document)
+    store_bitly_clicks_for(document)
+
+
 def _update_bitly_clicks(aggregate_link):
     RATE_LIMIT_SLEEP = 10  # 10 seconds default pause if we get rate limited
     while True:
         try:
-            clicks = bitly.clicks_by_day(shortUrl=aggregate_link, days=config.NUMBER_OF_DAYS_DATA_TO_COLLECT)
-            print "Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks']))
-            add_clicks_to_mongodb(clicks)
+            _get_new_link_clicks_then_add_to_mongodb(aggregate_link)
+            #_get_new_clicks_add_to_mongodb(aggregate_link)
             break  # exit the loop as we've successfully fetched from bitly
         except BitlyError as err:
             # rarely we see this error, we catch all bitly errors here
@@ -175,19 +193,19 @@ def _update_bitly_clicks(aggregate_link):
             #502
             if err.code == 502:
                 # IGNORING ERROR for http://bit.ly/VFPCJr:BitlyError(u'RATE_LIMIT_EXCEEDED',)
-                print "IGNORING ERROR for {}:{}".format(aggregate_link, repr(err))
+                print("IGNORING ERROR for {}:{}".format(aggregate_link, repr(err)))
                 time.sleep(0.1)  # pause for a moment and then we retry
-                print "Retrying..."
+                print("Retrying...")
             else:
                 if err.code == 403:
                     # err.message u'RATE_LIMIT_EXCEEDED'
-                    print "Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message)
+                    print("Sleeping for {} due to code 403 {}".format(RATE_LIMIT_SLEEP, err.message))
                     time.sleep(RATE_LIMIT_SLEEP)  # wait a bit, try again
                     RATE_LIMIT_SLEEP = RATE_LIMIT_SLEEP * 2  # double our wait time
                     RATE_LIMIT_SLEEP = min(RATE_LIMIT_SLEEP, 30 * 60)  # max of 30 mins
                 else:
                     # what other errors have we encountered?
-                    print "UNKNOWN ERROR:", repr(err)
+                    print("UNKNOWN ERROR:", repr(err))
                     #import pdb; pdb.set_trace()  # is there an error code for over capacity?
 
 
@@ -233,7 +251,6 @@ def get_title_canonical_url_from(bitly_url):
 
 def add_from_file(filename):
     """Read list of bit.ly links from file, add to mongodb"""
-    #lines = [row.strip() for row in open(filename).readlines()]
     lines = [row.strip().split(',') for row in open(filename).readlines()]
     for bitly_url, desired_domain in lines:
         aggregate_link, html_title, canonical_url, domain = get_title_canonical_url_from(bitly_url)
@@ -241,17 +258,17 @@ def add_from_file(filename):
         if domain == desired_domain:
             existing_document = config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link})
             if not existing_document:
-                print aggregate_link, html_title, canonical_url
-                print "Adding:", aggregate_link
+                print(aggregate_link, html_title, canonical_url)
+                print("Adding:", aggregate_link)
                 add_entries_to_mongodb(aggregate_link, html_title, canonical_url, domain)
             else:
-                print "We already seem to have", bitly_url,
+                print("We already seem to have", bitly_url, end=" ")
                 if bitly_url != aggregate_link:
-                    print " aggregate_link version", aggregate_link
+                    print(" aggregate_link version", aggregate_link)
                 else:
-                    print
+                    print()
         else:
-            print "Ignoring off-topic domain:", domain
+            print("Ignoring off-topic domain:", domain)
 
 
 if __name__ == "__main__":
@@ -275,12 +292,12 @@ if __name__ == "__main__":
 
     if args.list_domains:
         domains = list_domains_we_track()
-        print "We track:", domains
+        print("We track:", domains)
 
     if args.update_everything:
         # update in parallel
         domains = list_domains_we_track()
         P = Pool(POOL_SIZE_FOR_BITLY_UPDATES)
         P.map(get_link_result, [str(domain) for domain in domains])
-        print "Updating bitly click history for all of our links"
+        print("Updating bitly click history for all of our links")
         update_bitly_clicks()

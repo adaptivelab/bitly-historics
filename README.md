@@ -61,13 +61,13 @@ To featch new links for the domains we're tracking, and all the click history fo
 
 To add a domain, we ask Bitly for all the Bitly links for bbc.co.uk:
 
-    $ BITLY_HISTORICS_CONFIG=production python historics.py --a bbc.co.uk
+    $ BITLY_HISTORICS_CONFIG=production python historics.py --add-domain bbc.co.uk
 
 and our mongodb is updated with the snapshot of links that they provide.
 
 We can run this same call on another day to get an updated set of links, we'll add new links to our collection. We never remove links from mongodb.
 
-Next let us request updated click data for every Bitly link that we track. We won't request an update if we've already recorded new data in the last 24 hours.
+Next let us request updated click data for every Bitly link that we track. We won't request an update if we've already recorded new data in the last N hours (N is set in configuration).
 
     $ BITLY_HISTORICS_CONFIG=production python historics.py --update-clicks
 
