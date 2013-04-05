@@ -104,6 +104,13 @@ def get_link_result(domain):
     return links_for_site
 
 
+def _hash_is_active(updated_at, clicks):
+    """If most recent click date is close to updated_at, keep updating, else assume this hash is dead"""
+    most_recent_dt_click = clicks[-1]
+    most_recent_dt = most_recent_dt_click[0]
+    return updated_at - most_recent_dt < config.TIMEDELTA_FOR_HASH_TO_BE_CONSIDERED_INACTIVE
+
+
 def get_bitly_links_to_update():
     all_links = config.mongo_bitly_links_raw.find()
     bitly_links_to_update = []
@@ -113,9 +120,13 @@ def get_bitly_links_to_update():
         global_hash = tools.get_hash(aggregate_link)
         clicks = config.mongo_bitly_clicks.find_one({'global_hash': global_hash})
         updated_at = config.A_LONG_TIME_AGO
+        hash_is_active = True
         if clicks:
             updated_at = clicks['updated_at']
-        if updated_at < recent_cutoff:
+            hash_is_active = _hash_is_active(updated_at, clicks['clicks'])
+            if not hash_is_active:
+                print("THIS HASH IS CONSIDERED TO BE OUT OF DATE", aggregate_link)
+        if updated_at < recent_cutoff and hash_is_active:
             bitly_links_to_update.append(aggregate_link)
     return bitly_links_to_update
 

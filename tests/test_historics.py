@@ -94,6 +94,22 @@ class TestLinkClicks(unittest.TestCase):
         self.assertTrue(document['clicks'][1] == (datetime.datetime(2012, 12, 16, 4, 0), 1))
         self.assertTrue(document['clicks'][5] == (datetime.datetime(2013, 3, 5, 4, 0), 1))
 
+    def test_hash_is_active(self):
+        """Check that a small time between update and most recent result mean this link is still active"""
+        # check that updated_at that matches latest result means this hash is
+        # considered to be still active
+        response = fixtures.link_clicks0
+        sorted_link_clicks = historics.process_link_clicks_response(response)
+        updated_at = datetime.datetime.fromtimestamp(response[0]['dt'])
+        hash_is_active = historics._hash_is_active(updated_at, sorted_link_clicks)
+        self.assertTrue(hash_is_active)
+
+        # now confirm that an older click with a recent updated_at is
+        # considered as inactive
+        updated_at = updated_at + config.TIMEDELTA_FOR_HASH_TO_BE_CONSIDERED_INACTIVE
+        hash_is_active = historics._hash_is_active(updated_at, sorted_link_clicks)
+        self.assertFalse(hash_is_active)
+
     def test_add_new_hourly_clicks_to_document(self):
         """Use hourly click data to update a new document"""
         hsh = "nothing"
