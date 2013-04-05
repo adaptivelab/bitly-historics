@@ -9,7 +9,7 @@ import argparse
 import time
 from multiprocessing.dummy import Pool
 import datetime
-from dateutil import parser as dt_parser
+#from dateutil import parser as dt_parser
 import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
 from bitly_api import BitlyError
 import bitly_api_extended
@@ -120,50 +120,50 @@ def get_bitly_links_to_update():
     return bitly_links_to_update
 
 
-def get_popularity_per_day(clicks_by_day_result):
-    """Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
-    # THIS WILL BE OBSOLETE
-    popularity_per_day = []
-    clicks_list = clicks_by_day_result[0].get('clicks', [])
-    for click_dict in clicks_list:
-        clicks = click_dict["clicks"]  # e.g. 113
-        day_start = click_dict["day_start"]  # e.g. 1359003600
-        dt = dt_parser.parse(time.asctime(time.gmtime(day_start)))
-        popularity_per_day.append((dt, clicks))
-    popularity_per_day.sort()
-    return popularity_per_day
+#def get_popularity_per_day(clicks_by_day_result):
+    #"""Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
+    ## THIS WILL BE OBSOLETE
+    #popularity_per_day = []
+    #clicks_list = clicks_by_day_result[0].get('clicks', [])
+    #for click_dict in clicks_list:
+        #clicks = click_dict["clicks"]  # e.g. 113
+        #day_start = click_dict["day_start"]  # e.g. 1359003600
+        #dt = dt_parser.parse(time.asctime(time.gmtime(day_start)))
+        #popularity_per_day.append((dt, clicks))
+    #popularity_per_day.sort()
+    #return popularity_per_day
 
 
-def add_clicks_to_mongodb(click_response):
-    """Add clicks to mongodb if not already present"""
-    # THIS WILL BE OBSOLETE
-    # create full bitly link (as stored in links from a bitly search)
-    global_hash = click_response[0]['global_hash']
-    popularity_per_day = get_popularity_per_day(click_response)
-    document = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
-    known_clicks = {}
-    if document:
-        # we have an entry so we append our datetime & click counts
-        bitly_clicks = document["clicks"]
-        known_clicks = {day_start: clicks for day_start, clicks in bitly_clicks}
-        for day_start, nbr_clicks in popularity_per_day:
-            known_clicks[day_start] = nbr_clicks
-        # turn the dict back into a sorted list
-        bitly_clicks = [(day_start, clicks) for day_start, clicks in known_clicks.items()]
-        bitly_clicks.sort()
-        document["clicks"] = bitly_clicks
-    else:
-        document = {"global_hash": global_hash,
-                    "clicks": popularity_per_day}
-    document['updated_at'] = datetime.datetime.utcnow()
-    config.mongo_bitly_clicks.save(document)
+#def add_clicks_to_mongodb(click_response):
+    #"""Add clicks to mongodb if not already present"""
+    ## THIS WILL BE OBSOLETE
+    ## create full bitly link (as stored in links from a bitly search)
+    #global_hash = click_response[0]['global_hash']
+    #popularity_per_day = get_popularity_per_day(click_response)
+    #document = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
+    #known_clicks = {}
+    #if document:
+        ## we have an entry so we append our datetime & click counts
+        #bitly_clicks = document["clicks"]
+        #known_clicks = {day_start: clicks for day_start, clicks in bitly_clicks}
+        #for day_start, nbr_clicks in popularity_per_day:
+            #known_clicks[day_start] = nbr_clicks
+        ## turn the dict back into a sorted list
+        #bitly_clicks = [(day_start, clicks) for day_start, clicks in known_clicks.items()]
+        #bitly_clicks.sort()
+        #document["clicks"] = bitly_clicks
+    #else:
+        #document = {"global_hash": global_hash,
+                    #"clicks": popularity_per_day}
+    #document['updated_at'] = datetime.datetime.utcnow()
+    #config.mongo_bitly_clicks.save(document)
 
 
-def _get_new_clicks_add_to_mongodb(aggregate_link):
-    # THIS WILL BE OBSOLETE
-    clicks = bitly.clicks_by_day(shortUrl=aggregate_link, days=config.NUMBER_OF_DAYS_DATA_TO_COLLECT)
-    print("Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks'])))
-    add_clicks_to_mongodb(clicks)
+#def _get_new_clicks_add_to_mongodb(aggregate_link):
+    ## THIS WILL BE OBSOLETE
+    #clicks = bitly.clicks_by_day(shortUrl=aggregate_link, days=config.NUMBER_OF_DAYS_DATA_TO_COLLECT)
+    #print("Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks'])))
+    #add_clicks_to_mongodb(clicks)
 
 
 def _get_new_link_clicks_then_add_to_mongodb(aggregate_link):
