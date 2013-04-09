@@ -7,13 +7,15 @@ from __future__ import print_function  # force use of print("hello")
 from __future__ import unicode_literals  # force unadorned strings "" to be unicode without prepending u""
 import argparse
 import time
+import os
 from multiprocessing.dummy import Pool
 import datetime
 #from dateutil import parser as dt_parser
 import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
 from bitly_api import BitlyError
-import bitly_api_extended
+import bitly_api
 import tools
+import unicodecsv
 
 # Usage:
 # $ BITLY_HISTORICS_CONFIG=production python start_here.py --help
@@ -32,8 +34,7 @@ POOL_SIZE_FOR_BITLY_UPDATES = 10
 
 # bitly api
 access_token = config.BITLY_ACCESS_TOKEN
-#bitly = bitly_api.Connection(access_token=access_token)
-bitly = bitly_api_extended.get_bitly_connection(access_token)
+bitly = bitly_api.Connection(access_token=access_token)
 
 # Bitly API limits
 # http://dev.bitly.com/best_practices.html
@@ -123,58 +124,19 @@ def get_bitly_links_to_update():
         hash_is_active = True
         if clicks:
             updated_at = clicks['updated_at']
-            hash_is_active = _hash_is_active(updated_at, clicks['clicks'])
-            if not hash_is_active:
-                config.logger.info("THIS HASH IS CONSIDERED TO BE OUT OF DATE:" + repr(aggregate_link))
+            click_events = clicks['clicks']
+            if click_events:
+                hash_is_active = _hash_is_active(updated_at, click_events)
+            else:
+                config.logger.warning("This hash has 0 clicks, our logic keeps it alive regardless of its age:" + repr(aggregate_link))
+
+            # retain this for debugging but it isn't useful to report during
+            # production
+            #if not hash_is_active:
+                #config.logger.info("THIS HASH IS CONSIDERED TO BE OUT OF DATE:" + repr(aggregate_link))
         if updated_at < recent_cutoff and hash_is_active:
             bitly_links_to_update.append(aggregate_link)
     return bitly_links_to_update
-
-
-#def get_popularity_per_day(clicks_by_day_result):
-    #"""Convert clicks_by_day result into [(datetime, nbr_clicks),...]"""
-    ## THIS WILL BE OBSOLETE
-    #popularity_per_day = []
-    #clicks_list = clicks_by_day_result[0].get('clicks', [])
-    #for click_dict in clicks_list:
-        #clicks = click_dict["clicks"]  # e.g. 113
-        #day_start = click_dict["day_start"]  # e.g. 1359003600
-        #dt = dt_parser.parse(time.asctime(time.gmtime(day_start)))
-        #popularity_per_day.append((dt, clicks))
-    #popularity_per_day.sort()
-    #return popularity_per_day
-
-
-#def add_clicks_to_mongodb(click_response):
-    #"""Add clicks to mongodb if not already present"""
-    ## THIS WILL BE OBSOLETE
-    ## create full bitly link (as stored in links from a bitly search)
-    #global_hash = click_response[0]['global_hash']
-    #popularity_per_day = get_popularity_per_day(click_response)
-    #document = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
-    #known_clicks = {}
-    #if document:
-        ## we have an entry so we append our datetime & click counts
-        #bitly_clicks = document["clicks"]
-        #known_clicks = {day_start: clicks for day_start, clicks in bitly_clicks}
-        #for day_start, nbr_clicks in popularity_per_day:
-            #known_clicks[day_start] = nbr_clicks
-        ## turn the dict back into a sorted list
-        #bitly_clicks = [(day_start, clicks) for day_start, clicks in known_clicks.items()]
-        #bitly_clicks.sort()
-        #document["clicks"] = bitly_clicks
-    #else:
-        #document = {"global_hash": global_hash,
-                    #"clicks": popularity_per_day}
-    #document['updated_at'] = datetime.datetime.utcnow()
-    #config.mongo_bitly_clicks.save(document)
-
-
-#def _get_new_clicks_add_to_mongodb(aggregate_link):
-    ## THIS WILL BE OBSOLETE
-    #clicks = bitly.clicks_by_day(shortUrl=aggregate_link, days=config.NUMBER_OF_DAYS_DATA_TO_COLLECT)
-    #print("Updating {}, we have up to {} days of data to add".format(aggregate_link, len(clicks[0]['clicks'])))
-    #add_clicks_to_mongodb(clicks)
 
 
 def _get_new_link_clicks_then_add_to_mongodb(aggregate_link):
@@ -182,8 +144,11 @@ def _get_new_link_clicks_then_add_to_mongodb(aggregate_link):
     response = bitly.link_clicks(link=aggregate_link, rollup=False, unit=NEW_LINK_CLICKS_UNIT)
     hsh = tools.get_hash(aggregate_link)
     document = get_existing_bitly_clicks_for(hsh)
+    nbr_clicks_before_update = len(document['clicks'])
     add_response_to_document(response, document)
+    nbr_clicks_after_update = len(document['clicks'])
     store_bitly_clicks_for(document)
+    config.logger.info("Stored {} new clicks (new total {}) with {} bin size for {}".format(nbr_clicks_after_update - nbr_clicks_before_update, nbr_clicks_after_update, NEW_LINK_CLICKS_UNIT, aggregate_link))
 
 
 def _update_bitly_clicks(aggregate_link):
@@ -267,23 +232,53 @@ def get_title_canonical_url_from(bitly_url):
 def add_from_file(filename):
     """Read list of bit.ly links from file, add to mongodb"""
     lines = [row.strip().split(',') for row in open(filename).readlines()]
-    for bitly_url, desired_domain in lines:
-        aggregate_link, html_title, canonical_url, domain = get_title_canonical_url_from(bitly_url)
-        # get the aggregate_url which should be canonical at bitly's end
-        if domain == desired_domain:
-            existing_document = config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link})
-            if not existing_document:
-                print(aggregate_link, html_title, canonical_url)
-                print("Adding:", aggregate_link)
-                add_entries_to_mongodb(aggregate_link, html_title, canonical_url, domain)
-            else:
-                print("We already seem to have", bitly_url, end=" ")
-                if bitly_url != aggregate_link:
-                    print(" aggregate_link version", aggregate_link)
+    for line_nbr, (bitly_url, desired_domain) in enumerate(lines):
+        possible_existing_document = config.mongo_bitly_links_raw.find_one({'aggregate_link': bitly_url})
+        if possible_existing_document is None:  # we haven't stored this exact url yet
+            try:
+                aggregate_link, html_title, canonical_url, domain = get_title_canonical_url_from(bitly_url)
+                # get the aggregate_url which should be canonical at bitly's end
+                if desired_domain in domain:  # see inconsistent behaviour below
+                    existing_document = config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link})
+                    if not existing_document:
+                        print(aggregate_link, html_title, canonical_url, desired_domain)
+                        print("Adding:", aggregate_link, line_nbr)
+                        # Note that we add using desired_domain as this is the same
+                        # domain as we'd find via a bitly.search command
+                        # This is to support odd Bitly behaviour - a search that
+                        # includes a site with subdomain (e.g. blog.asos.com) will
+                        # have domain set to "asos.com". A call to link_info
+                        # however on the same bitly URL will have domain set to the
+                        # full subdomain (for this example blog.asos.com). We
+                        # preserve the root domain form for consistency.
+                        add_entries_to_mongodb(aggregate_link, html_title, canonical_url, desired_domain)
+                    else:
+                        print("We already seem to have", bitly_url, end=" ")
+                        if bitly_url != aggregate_link:
+                            print(" aggregate_link version", aggregate_link)
+                        else:
+                            print()
                 else:
-                    print()
+                    print("Ignoring off-topic domain:", bitly_url, domain, desired_domain)
+            except BitlyError as err:
+                print("Received BitlyError: {}".format(repr(err)))
         else:
-            print("Ignoring off-topic domain:", domain)
+            print("We already seem to have", bitly_url, line_nbr)
+
+
+def export_list_of_bitly_links(filename):
+    """Export a list of bit.ly links and domains (for use by add_from_file)"""
+    if not os.path.exists(filename):
+        outfile = unicodecsv.writer(open(filename, "w"))
+    else:
+        raise IOError("File '{}' exists, please choose an output filename that does not already exist".format(filename))
+
+    # get an iterator for all of our raw link data
+    all_links = config.mongo_bitly_links_raw.find()
+    for link in all_links:
+        bitly_url = link['aggregate_link']  # e.g. u'http://bit.ly/XVCfdH'
+        domain = link['domain']  # e.g. u'independent.co.uk'
+        outfile.writerow([bitly_url, domain])
 
 
 if __name__ == "__main__":
@@ -293,10 +288,14 @@ if __name__ == "__main__":
     parser.add_argument('--update-clicks', '-u', action="store_true", help='Fetch updated click data for all out-of-date bitly links')
     parser.add_argument('--list-domains', '-l', action="store_true", help='List the distinct domains (e.g. ["asos.com", "bbc.co.uk"]) that we track')
     parser.add_argument('--update-everything', '-e', action="store_true", help="Add all new URLs for existing domains and then update click history for all our links")
+    parser.add_argument('--export-list-of-bitly-links', '-b', help="Export our stored bit.ly links and domains (for --add-from-file) to a file e.g. '--export-list-of-bitly-links existing_bitly_links.txt'")
     args = parser.parse_args()
 
     if args.add_from_file:
         add_from_file(args.add_from_file)
+
+    if args.export_list_of_bitly_links:
+        export_list_of_bitly_links(args.export_list_of_bitly_links)
 
     if args.add_domain:
         # get list of links for a root site
