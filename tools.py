@@ -6,7 +6,11 @@ BITLY_URL = "http://bit.ly/"
 
 
 def get_hash(bitly_url):
-    """Return 'Wozuff' from a link like 'http://bit.ly/Wozuff'"""
+    """Return 'Wozuff' from a link like 'http://bit.ly/Wozuff'
+
+    >>> get_hash("http://bit.ly/abcDEF")
+    'abcDEF'
+    """
     assert bitly_url.startswith(BITLY_URL)
     hsh = bitly_url[len(BITLY_URL):]
     if hsh.endswith("/"):
@@ -15,5 +19,8 @@ def get_hash(bitly_url):
 
 
 def make_bitly_url(hsh):
-    """Convert 'Wozuff' into 'http://bit.ly/Wozuff'"""
+    """Convert 'Wozuff' into 'http://bit.ly/Wozuff'
+
+    >>> make_bitly_url('Wozuff')
+    'http://bit.ly/Wozuff'"""
     return BITLY_URL + hsh
