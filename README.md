@@ -122,6 +122,14 @@ To extract summaries of click data per link for a domain, writing to e.g. "link_
 
     $ BITLY_HISTORICS_CONFIG=production python extract_data.py --domains guardian.co.uk --link-report link_report
 
+Usage - reporting most-clicked links:
+------------------------------------
+
+Output a list of the most clicked links in the time period, restricting to the top 20:
+
+    $ BITLY_HISTORICS_CONFIG=production python extract_data.py --ff 2013-04-08T00:00 -g 20 --domains bbc.co.uk
+    
+
 Todo:
 ----
 
@@ -135,9 +143,9 @@ Stop collecting data for links that haven't had any clicks for X days (e.g. if n
 What might go wrong:
 -------------------
 
- * We use bitly's clicks_by_day API call, this is due to be deprecated. Their replacement call gave an aggregate result, not a breakdown by day, so further investigation will be required here.
  * New error (7th March spotted) UNKNOWN ERROR: BitlyError('<urlopen error [Errno -2] Name or service not known>',) - local web access problem?
  * We don't use mocks for web-facing calls (e.g. calls to bitly for search, link_info, click data etc and for the requests library) - we really should - running coverage during the unittests will highlight this 
+ * Bitly's search API and lookup API return different results for the domain field (one has the subdomain e.g. news.bbc.co.uk, the other has the root domain e.g. bbc.co.uk) for the same bitly link
 
 Tracking at present:
 -------------------
