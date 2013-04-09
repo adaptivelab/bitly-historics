@@ -24,12 +24,15 @@ def plot_clicks(clicks, ax):
     if clicks is None:
         print "Clicks is None in plot_clicks - this might just mean that we haven't fetched data yet"
     else:
-        dates, clicks_per_day = zip(*clicks['clicks'])
+        click_events = clicks['clicks']
+        dates, clicks_per_day = [], []
+        if click_events:
+            dates, clicks_per_day = zip(*click_events)
         global_hash = clicks['global_hash']
         aggregate_link = 'http://bit.ly/' + global_hash
         document = config.mongo_bitly_links_raw.find_one({'aggregate_link': aggregate_link})
         title = document.get('title', '<no title>')
-        lines = ax.plot_date(dates, clicks_per_day, '-', label=title + " (%s+)" % (aggregate_link))
+        lines = ax.plot_date(dates, clicks_per_day, 'x-', label=title + " (%s+)" % (aggregate_link))
     return lines
 
 

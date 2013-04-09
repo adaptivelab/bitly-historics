@@ -99,3 +99,26 @@ clicks1 = [{u'clicks': [{u'clicks': 115, u'day_start': 1359003600},
             u'global_hash': u'Wozuff',
             u'hash': u'Wozuff',
             u'user_hash': u'Wozuff'}]
+
+
+# overlapping older data using a daily count
+link_clicks0 = [{u'clicks': 2, u'dt': 1357876800},
+                {u'clicks': 2, u'dt': 1355976000},
+                {u'clicks': 1, u'dt': 1355630400},
+                {u'clicks': 2, u'dt': 1355457600}]
+
+link_clicks1 = [{u'clicks': 1, u'dt': 1362456000},
+                {u'clicks': 2, u'dt': 1358395200},
+                {u'clicks': 2, u'dt': 1357876800},
+                {u'clicks': 2, u'dt': 1355976000},
+                {u'clicks': 1, u'dt': 1355630400}]
+
+
+# more link clicks data, using an hourly count
+# historics.bitly.link_clicks(link="http://bitly.com/XXFhcM", rollup=False, unit="hour")
+link_clicks2 = [{u'clicks': 78, u'dt': 1365015600},
+                {u'clicks': 88, u'dt': 1365012000},
+                {u'clicks': 141, u'dt': 1365008400},
+                {u'clicks': 273, u'dt': 1365004800},
+                {u'clicks': 678, u'dt': 1365001200},
+                {u'clicks': 1226, u'dt': 1364997600}]
