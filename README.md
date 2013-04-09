@@ -36,12 +36,14 @@ Note that we only use a separate MongoDB here as we prefer to separate productio
 Testing:
 -------
 
-    $ BITLY_HISTORICS_CONFIG=testing nosetests
+    $ BITLY_HISTORICS_CONFIG=testing nosetests --with-doctest
+    .................
+    ----------------------------------------------------------------------
+    Ran 17 tests in 2.054s
+
 or 
 
     $ BITLY_HISTORICS_CONFIG=testing python -m unittest discover
-
-You should see 8 tests pass.
 
 To get coverage information use:
 
