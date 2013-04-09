@@ -149,6 +149,10 @@ class TestLinkClicks(unittest.TestCase):
         links_to_update = historics.get_bitly_links_to_update()
         self.assertTrue(len(links_to_update) == 1)
 
+        # check that we're only tracking this one domain
+        domains_we_track = historics.list_domains_we_track()
+        self.assertEqual(domains_we_track, ['bcd.com'])
+
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -190,6 +194,10 @@ class Test(unittest.TestCase):
         historics.add_links_raw_to_mongodb([fixtures.links0, fixtures.links1])
         nbr_links = config.mongo_bitly_links_raw.count()
         self.assertTrue(nbr_links == 2, "Expected 1 link, not {}".format(nbr_links))
+
+        # check that we're only tracking the two domains that we've added
+        domains_we_track = historics.list_domains_we_track()
+        self.assertEqual(domains_we_track, ['asos.com', 'guardian.co.uk'])
 
     #def test_add_clicks_to_mongo(self):
         #"""Can we add processed clicks to mongo?"""
