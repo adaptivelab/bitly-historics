@@ -34,9 +34,12 @@ BITLY_ACCESS_TOKEN = open(BITLY_ACCESS_TOKEN_FILENAME).readline().strip()
 # Default datetime to use to indicate that a Document is out of date
 A_LONG_TIME_AGO = datetime.datetime(1970, 1, 1)
 # Number of hours that we're out of date before we fetch new click data
-UPDATE_FROM_N_HOURS_AGO = 48  # 24
+UPDATE_FROM_N_HOURS_AGO = 1
 # Collect N days worth of historic click data
 NUMBER_OF_DAYS_DATA_TO_COLLECT = 30
+
+# Time window before a hash with no new clicks is considered to be dead
+TIMEDELTA_FOR_HASH_TO_BE_CONSIDERED_INACTIVE = datetime.timedelta(days=5)
 
 # Common mongodb configuration
 MONGO_BITLY_LINKS_RAW = 'bitly_links_raw'

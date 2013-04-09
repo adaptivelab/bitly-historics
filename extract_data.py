@@ -4,11 +4,12 @@
 import argparse
 import datetime
 import time
+from dateutil import parser as dt_parser
 import unicodecsv
 from collections import Counter
 import config  # assumes env var BITLY_HISTORICS_CONFIG is configured
 import historics
-from dateutil import parser as dt_parser
+import tools
 
 # Usage:
 # $ export BITLY_HISTORICS_CONFIG=production
@@ -60,7 +61,7 @@ def get_links_for_domain(domain, filter_from, filter_to):
 
 def get_clicks_for_domain(domain, filter_from, filter_to):
     documents = config.mongo_bitly_links_raw.find({"domain": domain})
-    hashes = [historics.get_hash(document['aggregate_link']) for document in documents]
+    hashes = [tools.get_hash(document['aggregate_link']) for document in documents]
     counter = Counter()
     total_clicks = 0
     for global_hash in hashes:
@@ -78,6 +79,33 @@ def get_clicks_for_domain(domain, filter_from, filter_to):
     return dates_clicks, total_clicks
 
 
+def get_clicks_for_domain_links(domain, filter_from, filter_to):
+    documents = config.mongo_bitly_links_raw.find({"domain": domain})
+    hashes = [tools.get_hash(document['aggregate_link']) for document in documents]
+    clicks_per_link = {}
+    for global_hash in hashes:
+        clicks = config.mongo_bitly_clicks.find_one({"global_hash": global_hash})
+        if clicks:
+            counts = 0
+            for date, clicks_per_day in clicks['clicks']:
+                if filter_from < date and filter_to > date:
+                    #items_to_count = [date] * clicks_per_day
+                    #counter.update(items_to_count)
+                    counts += clicks_per_day
+            if counts > 0:
+                clicks_per_link[global_hash] = counts
+
+    c = Counter(clicks_per_link)
+    return c
+
+
+def summarise_aggregate_links(global_hash_click_counter, top_n_results=None):
+    for global_hash, count in global_hash_click_counter.most_common(top_n_results):
+        aggregate_link = tools.make_bitly_url(global_hash)
+        link_raw = config.mongo_bitly_links_raw.find_one({"aggregate_link": aggregate_link})
+        print link_raw.get('summaryTitle', "<no title>"), link_raw['url'], aggregate_link + "+", count
+
+
 if __name__ == "__main__":
     filter_from = datetime.datetime.now() - datetime.timedelta(days=30)
     filter_from_str = time.strftime("%Y-%m-%dT%H:%M", filter_from.timetuple())
@@ -90,6 +118,7 @@ if __name__ == "__main__":
     parser.add_argument('--ft', type=str, default=None, help="Filter To date range, defaults to '--ff %s'" % (filter_to_str))
     parser.add_argument('--summary-csv', '-s', help="Write a total count of clicks for each specified domain to specified file e.g. '--summary-csv clicks.csv'")
     parser.add_argument('--clicks-daily-csv', '-c', help="Write a list of daily counts of clicks for 1 specified domain to specified file e.g. '--clicks-daily-csv dailyclicks.csv'")
+    parser.add_argument('--get-clicks-for-domain-links', '-g', default=20, type=int, help="Get sum of clicks for each link for a domain e.g. '--get-clicks-for-domain-links 30 -d guardian.co.uk'")
     parser.add_argument('--link-report', '-l', help="Write a report per domain on link click totals, nbr days of click activity e.g. '--link-report link_report' generates 'link_report_<domain>.csv'")
     args = parser.parse_args()
     print args
@@ -101,7 +130,12 @@ if __name__ == "__main__":
         filter_to = dt_parser.parse(args.ft)
     print "Filtering from {} to {}".format(filter_from, filter_to)
 
-    if args.domains:
+    if args.get_clicks_for_domain_links:
+        for domain in args.domains:
+            global_hash_click_counter = get_clicks_for_domain_links(domain, filter_from, filter_to)
+            summarise_aggregate_links(global_hash_click_counter, args.get_clicks_for_domain_links)
+
+    if args.domains and (args.summary_csv or args.clicks_daily_csv or args.link_report):
         summary_csv_writer = None
         if args.summary_csv:
             summary_csv_writer = unicodecsv.writer(open(args.summary_csv, 'w'))
@@ -109,6 +143,8 @@ if __name__ == "__main__":
             dates_clicks, total_clicks = get_clicks_for_domain(domain, filter_from, filter_to)
             if summary_csv_writer:
                 summary_csv_writer.writerow([domain, total_clicks])
+            else:
+                print "Found {} results for {}".format(len(dates_clicks), domain)
 
         clicks_daily_writer = None
         if args.clicks_daily_csv:
