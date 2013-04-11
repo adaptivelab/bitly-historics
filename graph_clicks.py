@@ -85,4 +85,7 @@ if __name__ == "__main__":
     if args.global_hash:
         ax.legend()
     ax.grid()
+    mng = plt.get_current_fig_manager()
+    mng.full_screen_toggle()
     plt.show()
+    #plt.tight_layout()

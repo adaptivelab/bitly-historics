@@ -82,7 +82,9 @@ We can import data via Twitter by reading tweets from specified accounts and exp
 
    $ BITLY_HISTORICS_CONFIG=production python get_non_bitly_links.py --screen_names bbcnews -n 20 -o new_links.txt
 
-The above writes a file `new_links.txt` containing bit.ly names inferred from (in this case) the BBC shortener bbc.in, these links are extracted from the first n tweets read on the specified Twitter accounts.
+The above writes a file `new_links.txt` containing bit.ly names inferred from (in this case) the BBC shortener bbc.in, these links are extracted from the first n tweets read on the specified Twitter accounts. An example line might be:
+
+   http://bit.ly/17mZBLF,bbc.co.uk
 
 We can import this new list of bit.ly links using:
 
