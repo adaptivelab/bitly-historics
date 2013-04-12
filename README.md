@@ -153,6 +153,7 @@ What might go wrong:
  * New error (7th March spotted) UNKNOWN ERROR: BitlyError('<urlopen error [Errno -2] Name or service not known>',) - local web access problem?
  * We don't use mocks for web-facing calls (e.g. calls to bitly for search, link_info, click data etc and for the requests library) - we really should - running coverage during the unittests will highlight this 
  * Bitly's search API and lookup API return different results for the domain field (one has the subdomain e.g. news.bbc.co.uk, the other has the root domain e.g. bbc.co.uk) for the same bitly link
+ * Currently we're ignoring timezones on Bitly data. Probably in historics.process_link_clicks_response we should assume UTC during datetime.datetime.fromtimestamp(d['dt']) and instead used utcfromtimestamp and add pytz.UTC. Bitly's API may or may not be returning UTC, this needs investigation http://dev.bitly.com/link_metrics.html#v3_link_clicks
 
 Changelog:
 ---------
