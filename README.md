@@ -13,10 +13,11 @@ Installation:
 ------------
 
   1. Make sure you have MongoDB installed (we run our own version using our mongodb.conf)
-  2. `$ pip install -r requirements.txt`  # install Python libraries
-  3. Create a Bitly token (http://dev.bitly.com/), save it in ./config/bitly_access_token.txt (read by ./config/__init__.py)
-  4. Run MongoDB (noted in next section), either use a global MongoDB or a local one for data separation from other projects (as defined here) (e.g. "$ ./run_log_mongodb.sh" to run a local instance)
-  5. `$ BITLY_HISTORICS_CONFIG=testing nosetests`  # test the basic setup (see Testing)
+  2. `$ pip install -r requirements.txt`  # install Python libraries including numpy
+  3. `$ pip install -r requirements_matplotlib.txt`  # install matplotlib (due to MEP11)
+  4. Create a Bitly token (http://dev.bitly.com/), save it in ./config/bitly_access_token.txt (read by ./config/__init__.py)
+  5. Run MongoDB (noted in next section), either use a global MongoDB or a local one for data separation from other projects (as defined here) (e.g. "$ ./run_log_mongodb.sh" to run a local instance)
+  6. `$ BITLY_HISTORICS_CONFIG=testing nosetests`  # test the basic setup (see Testing)
 
 Note I had to install `pip install numpy` by hand as pip (for reasons I cannot spot) wouldn't install it before matplotlib and matplotlib depends on numpy.
 
