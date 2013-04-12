@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Extract data for reporting"""
+from __future__ import division  # 1/2 == 0.5, as in Py3
+from __future__ import absolute_import  # avoid hiding global modules with locals
+from __future__ import print_function  # force use of print("hello")
+from __future__ import unicode_literals  # force unadorned strings "" to be unicode without prepending u""
 import argparse
 import datetime
 import time
@@ -103,7 +107,11 @@ def summarise_aggregate_links(global_hash_click_counter, top_n_results=None):
     for global_hash, count in global_hash_click_counter.most_common(top_n_results):
         aggregate_link = tools.make_bitly_url(global_hash)
         link_raw = config.mongo_bitly_links_raw.find_one({"aggregate_link": aggregate_link})
-        print link_raw.get('summaryTitle', "<no title>"), link_raw['url'], aggregate_link + "+", count
+        # prepare and output string, make sure it is UTF-8 encoded as we're
+        # bound to see some unicode (which the console neeeds to know about)
+        out_str = link_raw.get('summaryTitle', "<no title>") + " " + link_raw['url'] + " " + aggregate_link + "+ " + str(count)
+        out_str = out_str.encode('utf-8')
+        print(out_str)
 
 
 if __name__ == "__main__":
@@ -121,14 +129,14 @@ if __name__ == "__main__":
     parser.add_argument('--get-clicks-for-domain-links', '-g', default=20, type=int, help="Get sum of clicks for each link for a domain e.g. '--get-clicks-for-domain-links 30 -d guardian.co.uk'")
     parser.add_argument('--link-report', '-l', help="Write a report per domain on link click totals, nbr days of click activity e.g. '--link-report link_report' generates 'link_report_<domain>.csv'")
     args = parser.parse_args()
-    print args
+    print(args)
 
     # default will be to look at the last 30 days only
     if args.ff:
         filter_from = dt_parser.parse(args.ff)
     if args.ft:
         filter_to = dt_parser.parse(args.ft)
-    print "Filtering from {} to {}".format(filter_from, filter_to)
+    print("Filtering from {} to {}".format(filter_from, filter_to))
 
     if args.get_clicks_for_domain_links:
         for domain in args.domains:
@@ -144,7 +152,7 @@ if __name__ == "__main__":
             if summary_csv_writer:
                 summary_csv_writer.writerow([domain, total_clicks])
             else:
-                print "Found {} results for {}".format(len(dates_clicks), domain)
+                print("Found {} results for {}".format(len(dates_clicks), domain))
 
         clicks_daily_writer = None
         if args.clicks_daily_csv:
@@ -163,7 +171,7 @@ if __name__ == "__main__":
                 base_file_name = "%s_%s.csv" % (args.link_report, domain)
                 info_per_hash = get_links_for_domain(domain, filter_from, filter_to)
                 example_dict = info_per_hash[info_per_hash.keys()[0]]
-                print "Open %s for output" % (base_file_name)
+                print("Open %s for output" % (base_file_name))
                 writer = unicodecsv.DictWriter(open(base_file_name, 'wb'), fieldnames=example_dict.keys())
                 writer.writeheader()
                 for hsh, info in info_per_hash.items():
