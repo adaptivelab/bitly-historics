@@ -1,4 +1,10 @@
+.vagrant/machines/**/virtualbox
 *.py[cod]
+
+bitly_historics.log
+config/bitly_access_token.txt
+config/twitter_secrets.py
+env*
 
 # C extensions
 *.so
