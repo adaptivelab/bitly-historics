@@ -5,6 +5,9 @@ import 'nodes/*.pp'
 # Modules included for all nodes.
 #
 #
+# ED STONE NOTES:
+# many of the following are unnecessary and probably could just be removed:
+# hotworker, circus, flask, chaussette, zeromq (but Ian has deployed and does not want to delete stuff this close to delivery)
 class common {
 
     include python
