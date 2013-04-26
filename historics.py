@@ -148,7 +148,7 @@ def _get_new_link_clicks_then_add_to_mongodb(aggregate_link):
     add_response_to_document(response, document)
     nbr_clicks_after_update = len(document['clicks'])
     store_bitly_clicks_for(document)
-    config.logger.info("Stored {} new clicks (new total {}) with {} bin size for {}".format(nbr_clicks_after_update - nbr_clicks_before_update, nbr_clicks_after_update, NEW_LINK_CLICKS_UNIT, aggregate_link))
+    config.logger.debug("Stored {} new clicks (new total {}) with {} bin size for {}".format(nbr_clicks_after_update - nbr_clicks_before_update, nbr_clicks_after_update, NEW_LINK_CLICKS_UNIT, aggregate_link))
 
 
 def _update_bitly_clicks(aggregate_link):
